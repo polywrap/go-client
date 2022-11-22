@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unsafe"
 
 	"github.com/bytecodealliance/wasmtime-go"
 )
@@ -70,12 +71,14 @@ func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmti
 		panic("__wrap_load_env not implemented")
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
-		//mem := memory.UnsafeData(caller)
+		method := (*[]byte)(unsafe.Pointer(&methodPtr))
+		//args := (*[]byte)(unsafe.Pointer(&argsPtr))
+		//mem := memory.UnsafeData(store)
 		//copy(mem[methodPtr:], (*[]byte)(unsafe.Pointer(&methodPtr)))
 		//copy(mem[argsPtr:], (*[]byte)(unsafe.Pointer(&argsPtr)))
 		panic(fmt.Sprintf(
 			"__wrap_invoke_args not implemented %#v, %#v\n",
-			methodPtr,
+			method,
 			argsPtr,
 		))
 	})
