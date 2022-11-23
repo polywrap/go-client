@@ -71,24 +71,17 @@ func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmti
 		panic("__wrap_load_env not implemented")
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
-		method := (*[]byte)(unsafe.Pointer(&methodPtr))
-		//args := (*[]byte)(unsafe.Pointer(&argsPtr))
-		//mem := memory.UnsafeData(store)
-		//copy(mem[methodPtr:], (*[]byte)(unsafe.Pointer(&methodPtr)))
-		//copy(mem[argsPtr:], (*[]byte)(unsafe.Pointer(&argsPtr)))
-		panic(fmt.Sprintf(
-			"__wrap_invoke_args not implemented %#v, %#v\n",
-			method,
-			argsPtr,
-		))
+		mem := memory.UnsafeData(store)
+		copy(mem[methodPtr:], (*(*[]byte)(unsafe.Pointer(&methodPtr))))
+		copy(mem[argsPtr:], (*(*[]byte)(unsafe.Pointer(&argsPtr))))
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_result", func(ptr, len int32) {
-		//return memory.UnsafeData(caller)[ptr : ptr+len]
-		panic("__wrap_invoke_result not implemented")
+		mem := memory.UnsafeData(store)
+		copy(mem, mem[ptr:ptr+len])
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_error", func(ptr, len int32) {
-		//return memory.UnsafeData(caller)[ptr : ptr+len]
-		panic("__wrap_invoke_error not implemented")
+		mem := memory.UnsafeData(store)
+		copy(mem, mem[ptr:ptr+len])
 	})
 	linker.FuncWrap("wrap", "__wrap_abort", func(msgPtr, msgLen, filePtr, fileLen, line, column int32) {
 		mem := memory.UnsafeData(store)
@@ -97,17 +90,16 @@ func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmti
 		panic(fmt.Sprintf("__wrap_abort: %s\nFile: %s\nLocation: [{%d},{%d}]", msg, file, line, column))
 	})
 	linker.FuncWrap("wrap", "__wrap_subinvoke", func(uriPtr, uriLen, methodPtr, methodLen, argsPtr, argsLen int32) int32 {
-		//mem := memory.UnsafeData(caller)
-		//uri := string(mem[uriPtr : uriPtr+uriLen])
-		//method := string(mem[methodPtr : methodPtr+methodLen])
-		//args := mem[argsPtr : argsPtr+argsLen]
-		//panic(fmt.Sprintf(
-		//	"Uri: %s\nMethod: %s\nArgs: %x\n  __wrap_subinvoke not implemented",
-		//	uri,
-		//	method,
-		//	args,
-		//))
-		panic("__wrap_subinvoke not implemented")
+		mem := memory.UnsafeData(store)
+		uri := string(mem[uriPtr : uriPtr+uriLen])
+		method := string(mem[methodPtr : methodPtr+methodLen])
+		args := mem[argsPtr : argsPtr+argsLen]
+		panic(fmt.Sprintf(
+			"Uri: %s\nMethod: %s\nArgs: %x\n  __wrap_subinvoke not implemented",
+			uri,
+			method,
+			args,
+		))
 	})
 	linker.FuncWrap("wrap", "__wrap_subinvoke_result_len", func() int32 {
 		panic("__wrap_subinvoke_result_len not implemented")
