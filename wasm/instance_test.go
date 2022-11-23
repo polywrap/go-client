@@ -3,7 +3,6 @@ package wasm
 import (
 	"os"
 	"testing"
-	"unsafe"
 
 	"github.com/bytecodealliance/wasmtime-go"
 )
@@ -11,18 +10,7 @@ import (
 func testBigNumber(inst *WasmInstance) func(t *testing.T) {
 	return func(t *testing.T) {
 		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-
-		methodBuf := []byte("add")
-		methodPtr := (*int32)(unsafe.Pointer(&methodBuf))
-
-		argsBuf1 := []byte("123")
-		argsPtr1 := (*int32)(unsafe.Pointer(&argsBuf1))
-
-		argsBuf2 := []byte("123")
-		argsPtr2 := (*int32)(unsafe.Pointer(&argsBuf2))
-
-		r, e := invoke.Func().Call(inst.store, *methodPtr, *argsPtr1, *argsPtr2)
-		t.Logf("complete %#v, %s", r, e)
+		t.Logf("complete %#v", invoke)
 	}
 }
 
