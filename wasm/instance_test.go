@@ -5,12 +5,26 @@ import (
 	"testing"
 
 	"github.com/bytecodealliance/wasmtime-go"
+	"github.com/consideritdone/polywrap-go/polywrap/msgpack"
 )
 
 func testBigNumber(inst *WasmInstance) func(t *testing.T) {
 	return func(t *testing.T) {
 		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-		t.Logf("complete %#v", invoke)
+
+		context := msgpack.NewContext("Serializing (encoding) object-type: SampleCalculator")
+		encoder := msgpack.NewWriteEncoder(context)
+
+		encoder.WriteMapLength(2)
+		encoder.WriteString("a")
+		encoder.WriteI32(5)
+		encoder.WriteString("b")
+		encoder.WriteI32(7)
+
+		argsBytes := encoder.Buffer()
+
+		r, e := invoke.Func().Call(inst.store, 3, len(argsBytes), 0)
+		t.Logf("complete %#v, %s", r, e)
 	}
 }
 
@@ -50,35 +64,41 @@ func TestImports(t *testing.T) {
 		fn       func(inst *WasmInstance) func(t *testing.T)
 	}{
 		{
-			name:     "big-number",
+			name:     "simple-calculator",
 			wasmType: "file",
-			wasmData: "cases/big-number/wrap.wasm",
+			wasmData: "cases/simple-calculator/wrap.wasm",
 			fn:       testBigNumber,
 		},
-		{
-			name:     "simple-env",
-			wasmType: "file",
-			wasmData: "cases/simple-env/wrap.wasm",
-			fn:       testSimpleEnv,
-		},
-		{
-			name:     "simple-invoke",
-			wasmType: "file",
-			wasmData: "cases/simple-invoke/wrap.wasm",
-			fn:       testSimpleInvoke,
-		},
-		{
-			name:     "subinvoke/invoke",
-			wasmType: "file",
-			wasmData: "cases/simple-subinvoke/invoke/wrap.wasm",
-			fn:       testSimpleSubinvokeInvoke,
-		},
-		{
-			name:     "subinvoke/subinvoke",
-			wasmType: "file",
-			wasmData: "cases/simple-subinvoke/subinvoke/wrap.wasm",
-			fn:       testSimpleSubinvokeSubinvoke,
-		},
+		//{
+		//	name:     "big-number",
+		//	wasmType: "file",
+		//	wasmData: "cases/big-number/wrap.wasm",
+		//	fn:       testBigNumber,
+		//},
+		//{
+		//	name:     "simple-env",
+		//	wasmType: "file",
+		//	wasmData: "cases/simple-env/wrap.wasm",
+		//	fn:       testSimpleEnv,
+		//},
+		//{
+		//	name:     "simple-invoke",
+		//	wasmType: "file",
+		//	wasmData: "cases/simple-invoke/wrap.wasm",
+		//	fn:       testSimpleInvoke,
+		//},
+		//{
+		//	name:     "subinvoke/invoke",
+		//	wasmType: "file",
+		//	wasmData: "cases/simple-subinvoke/invoke/wrap.wasm",
+		//	fn:       testSimpleSubinvokeInvoke,
+		//},
+		//{
+		//	name:     "subinvoke/subinvoke",
+		//	wasmType: "file",
+		//	wasmData: "cases/simple-subinvoke/subinvoke/wrap.wasm",
+		//	fn:       testSimpleSubinvokeSubinvoke,
+		//},
 	}
 
 	for i := range cases {
