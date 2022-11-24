@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unsafe"
 
 	"github.com/bytecodealliance/wasmtime-go"
+	"github.com/consideritdone/polywrap-go/polywrap/msgpack"
 )
 
 var ErrNowWasmMemory = errors.New(strings.Join(
@@ -71,17 +71,32 @@ func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmti
 		panic("__wrap_load_env not implemented")
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
+		context := msgpack.NewContext("Serializing (encoding) object-type: SampleCalculator")
+		encoder := msgpack.NewWriteEncoder(context)
+
+		encoder.WriteMapLength(2)
+		encoder.WriteString("a")
+		encoder.WriteI32(9)
+		encoder.WriteString("b")
+		encoder.WriteI32(7)
+
+		argsBytes := encoder.Buffer()
+
 		mem := memory.UnsafeData(store)
-		copy(mem[methodPtr:], (*(*[]byte)(unsafe.Pointer(&methodPtr))))
-		copy(mem[argsPtr:], (*(*[]byte)(unsafe.Pointer(&argsPtr))))
+		copy(mem[methodPtr:], "add")
+		copy(mem[argsPtr:], argsBytes)
+		//copy(mem[methodPtr:], (*(*[]byte)(unsafe.Pointer(&methodPtr))))
+		//copy(mem[argsPtr:], (*(*[]byte)(unsafe.Pointer(&argsPtr))))
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_result", func(ptr, len int32) {
 		mem := memory.UnsafeData(store)
-		copy(mem, mem[ptr:ptr+len])
+		fmt.Printf("__wrap_invoke_result %d", mem[ptr:ptr+len])
+		//copy(mem, mem[ptr:ptr+len])
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_error", func(ptr, len int32) {
 		mem := memory.UnsafeData(store)
-		copy(mem, mem[ptr:ptr+len])
+		fmt.Printf("__wrap_invoke_error %s", mem[ptr:ptr+len])
+		//copy(mem, mem[ptr:ptr+len])
 	})
 	linker.FuncWrap("wrap", "__wrap_abort", func(msgPtr, msgLen, filePtr, fileLen, line, column int32) {
 		mem := memory.UnsafeData(store)
