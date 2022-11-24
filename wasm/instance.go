@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/bytecodealliance/wasmtime-go"
-	"github.com/consideritdone/polywrap-go/polywrap/msgpack"
 )
 
 var ErrNowWasmMemory = errors.New(strings.Join(
@@ -22,8 +22,12 @@ var ErrNowWasmMemory = errors.New(strings.Join(
 
 type WasmInstance struct {
 	store    *wasmtime.Store
+	memory   *wasmtime.Memory
 	linker   *wasmtime.Linker
 	instance *wasmtime.Instance
+
+	state *State
+	mu    *sync.Mutex
 }
 
 func NewInstance(wasm []byte) (*WasmInstance, error) {
@@ -32,26 +36,47 @@ func NewInstance(wasm []byte) (*WasmInstance, error) {
 	if err != nil {
 		return nil, err
 	}
-
-	linker := wasmtime.NewLinker(store.Engine)
 	memory, err := createMemory(wasm, store)
 	if err != nil {
 		return nil, err
 	}
-	createImport(linker, store, memory)
-	instance, err := linker.Instantiate(store, module)
+
+	wasmInstance := WasmInstance{
+		store:  store,
+		memory: memory,
+		linker: wasmtime.NewLinker(store.Engine),
+
+		state: nil,
+		mu:    &sync.Mutex{},
+	}
+	createImport(&wasmInstance)
+
+	instance, err := wasmInstance.linker.Instantiate(store, module)
 	if err != nil {
 		return nil, err
 	}
-
-	return &WasmInstance{
-		store:    store,
-		linker:   linker,
-		instance: instance,
-	}, nil
+	wasmInstance.instance = instance
+	return &wasmInstance, nil
 }
 
-func (w *WasmInstance) WrapInvoke() {
+func (w *WasmInstance) WrapInvoke(method string, args []byte, env []byte) (*State, error) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.state = &State{
+		Method: method,
+		Args:   args,
+		Env:    env,
+	}
+	invoke := w.instance.GetExport(w.store, "_wrap_invoke")
+	_, err := invoke.Func().Call(
+		w.store,
+		len(method),
+		len(args),
+		len(env),
+	)
+
+	return w.state, err
 }
 
 func createMemory(wasm []byte, store *wasmtime.Store) (*wasmtime.Memory, error) {
@@ -65,47 +90,32 @@ func createMemory(wasm []byte, store *wasmtime.Store) (*wasmtime.Memory, error) 
 	return wasmtime.NewMemory(store, memoryType)
 }
 
-func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmtime.Memory) {
-	linker.FuncWrap("wrap", "__wrap_load_env", func(ptr int32) {
-		fmt.Printf("%s\n", memory.UnsafeData(store))
+func createImport(inst *WasmInstance) {
+	inst.linker.FuncWrap("wrap", "__wrap_load_env", func(ptr int32) {
+		fmt.Printf("%s\n", inst.memory.UnsafeData(inst.store))
 		panic("__wrap_load_env not implemented")
 	})
-	linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
-		context := msgpack.NewContext("Serializing (encoding) object-type: SampleCalculator")
-		encoder := msgpack.NewWriteEncoder(context)
-
-		encoder.WriteMapLength(2)
-		encoder.WriteString("a")
-		encoder.WriteI32(9)
-		encoder.WriteString("b")
-		encoder.WriteI32(7)
-
-		argsBytes := encoder.Buffer()
-
-		mem := memory.UnsafeData(store)
-		copy(mem[methodPtr:], "add")
-		copy(mem[argsPtr:], argsBytes)
-		//copy(mem[methodPtr:], (*(*[]byte)(unsafe.Pointer(&methodPtr))))
-		//copy(mem[argsPtr:], (*(*[]byte)(unsafe.Pointer(&argsPtr))))
+	inst.linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
+		mem := inst.memory.UnsafeData(inst.store)
+		copy(mem[methodPtr:], []byte(inst.state.Method))
+		copy(mem[argsPtr:], inst.state.Args)
 	})
-	linker.FuncWrap("wrap", "__wrap_invoke_result", func(ptr, len int32) {
-		mem := memory.UnsafeData(store)
-		fmt.Printf("__wrap_invoke_result %d", mem[ptr:ptr+len])
-		//copy(mem, mem[ptr:ptr+len])
+	inst.linker.FuncWrap("wrap", "__wrap_invoke_result", func(ptr, len int32) {
+		mem := inst.memory.UnsafeData(inst.store)
+		inst.state.Result = mem[ptr : ptr+len]
 	})
-	linker.FuncWrap("wrap", "__wrap_invoke_error", func(ptr, len int32) {
-		mem := memory.UnsafeData(store)
-		fmt.Printf("__wrap_invoke_error %s", mem[ptr:ptr+len])
-		//copy(mem, mem[ptr:ptr+len])
+	inst.linker.FuncWrap("wrap", "__wrap_invoke_error", func(ptr, len int32) {
+		mem := inst.memory.UnsafeData(inst.store)
+		inst.state.Error = mem[ptr : ptr+len]
 	})
-	linker.FuncWrap("wrap", "__wrap_abort", func(msgPtr, msgLen, filePtr, fileLen, line, column int32) {
-		mem := memory.UnsafeData(store)
+	inst.linker.FuncWrap("wrap", "__wrap_abort", func(msgPtr, msgLen, filePtr, fileLen, line, column int32) {
+		mem := inst.memory.UnsafeData(inst.store)
 		msg := string(mem[msgPtr : msgPtr+msgLen])
 		file := string(mem[filePtr : filePtr+fileLen])
-		panic(fmt.Sprintf("__wrap_abort: %s\nFile: %s\nLocation: [{%d},{%d}]", msg, file, line, column))
+		inst.state.Error = []byte(fmt.Sprintf("__wrap_abort: %s\nFile: %s\nLocation: [{%d},{%d}]", msg, file, line, column))
 	})
-	linker.FuncWrap("wrap", "__wrap_subinvoke", func(uriPtr, uriLen, methodPtr, methodLen, argsPtr, argsLen int32) int32 {
-		mem := memory.UnsafeData(store)
+	inst.linker.FuncWrap("wrap", "__wrap_subinvoke", func(uriPtr, uriLen, methodPtr, methodLen, argsPtr, argsLen int32) int32 {
+		mem := inst.memory.UnsafeData(inst.store)
 		uri := string(mem[uriPtr : uriPtr+uriLen])
 		method := string(mem[methodPtr : methodPtr+methodLen])
 		args := mem[argsPtr : argsPtr+argsLen]
@@ -116,17 +126,17 @@ func createImport(linker *wasmtime.Linker, store *wasmtime.Store, memory *wasmti
 			args,
 		))
 	})
-	linker.FuncWrap("wrap", "__wrap_subinvoke_result_len", func() int32 {
+	inst.linker.FuncWrap("wrap", "__wrap_subinvoke_result_len", func() int32 {
 		panic("__wrap_subinvoke_result_len not implemented")
 	})
-	linker.FuncWrap("wrap", "__wrap_subinvoke_result", func(ptr int32) {
+	inst.linker.FuncWrap("wrap", "__wrap_subinvoke_result", func(ptr int32) {
 		panic("__wrap_subinvoke_result not implemented")
 	})
-	linker.FuncWrap("wrap", "__wrap_subinvoke_error_len", func() int32 {
+	inst.linker.FuncWrap("wrap", "__wrap_subinvoke_error_len", func() int32 {
 		panic("__wrap_subinvoke_error_len not implemented")
 	})
-	linker.FuncWrap("wrap", "__wrap_subinvoke_error", func(ptr int32) {
+	inst.linker.FuncWrap("wrap", "__wrap_subinvoke_error", func(ptr int32) {
 		panic("__wrap_subinvoke_result not implemented")
 	})
-	linker.Define("env", "memory", memory)
+	inst.linker.Define("env", "memory", inst.memory)
 }
