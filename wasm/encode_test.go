@@ -2,9 +2,12 @@ package wasm
 
 import (
 	"testing"
+
+	"github.com/consideritdone/polywrap-go/polywrap/msgpack/big"
 )
 
 func TestEncode(t *testing.T) {
+	intdata := int8(1)
 	cases := []struct {
 		name     string
 		value    any
@@ -46,6 +49,28 @@ func TestEncode(t *testing.T) {
 		{
 			name:  "string",
 			value: "some value",
+		},
+		{
+			name:  "*big.Int",
+			value: big.NewInt(1),
+		},
+		{
+			name: "struct",
+			value: &(struct {
+				One   int8  `tag:"one"`
+				Two   int8  `tag:"two"`
+				Three *int8 `tag:"three"`
+				Map   map[string]int8
+			}{
+				One:   1,
+				Two:   2,
+				Three: &intdata,
+				Map: map[string]int8{
+					"one":   int8(1),
+					"two":   int8(2),
+					"three": int8(3),
+				},
+			}),
 		},
 	}
 	for i := range cases {
