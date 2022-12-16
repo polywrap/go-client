@@ -42,7 +42,7 @@ func Encode(value any) ([]byte, error) {
 			encoder.WriteString(v.String())
 		case reflect.Slice, reflect.Array:
 			encoder.WriteArrayLength(uint32(v.Len()))
-			for i := 0; i < v.Len(); i++ {
+			for i := v.Len() - 1; i >= 0; i-- {
 				queue = append([]reflect.Value{v.Index(i)}, queue...)
 			}
 		case reflect.Map:

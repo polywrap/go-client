@@ -36,4 +36,5 @@ func TestDecode(t *testing.T) {
 	makeDecoderTest(t, "string", "hello world")
 	makeDecoderTest(t, "[4]int8", [4]int8{1, 2, 3, 4})
 	makeDecoderTest(t, "[]int8", []int8{1, 2, 3, 4})
+	makeDecoderTest(t, "map[string]int8", map[string]int8{"one": 1, "two": 2, "three": 3})
 }
