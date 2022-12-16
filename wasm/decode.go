@@ -40,6 +40,14 @@ func Decode[T any](data []byte) (T, error) {
 			v.SetFloat(float64(decoder.ReadF64()))
 		case reflect.String:
 			v.SetString(decoder.ReadString())
+		case reflect.Array, reflect.Slice:
+			aLn := int(decoder.ReadArrayLength())
+			if v.Kind() == reflect.Slice {
+				v.Set(reflect.MakeSlice(v.Type(), aLn, aLn))
+			}
+			for i := 0; i < aLn; i++ {
+				queue = append([]reflect.Value{v.Index(i)}, queue...)
+			}
 		default:
 			return *value, fmt.Errorf("unknown type: %s", v.Type())
 		}
