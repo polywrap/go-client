@@ -63,7 +63,7 @@ func Decode[T any](data []byte) (T, error) {
 		case reflect.Struct:
 			t := v.Type()
 			if t.Name() == "Int" {
-				v.Set(reflect.ValueOf(decoder.ReadBigInt()))
+				v.Set(reflect.Indirect(reflect.ValueOf(decoder.ReadBigInt())))
 			} else {
 				sLn := int(decoder.ReadMapLength())
 				if sLn != v.NumField() {

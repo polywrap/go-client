@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/consideritdone/polywrap-go/polywrap/msgpack/big"
 )
 
 func makeDecoderTest[T any](t *testing.T, name string, expected T) {
@@ -28,6 +30,7 @@ func TestDecode(t *testing.T) {
 		Two   float32
 		Three string
 		Four  *string
+		Five  *big.Int
 	}
 	type testStruct struct {
 		SomeMap1 map[string]simpleTestStruct
@@ -65,11 +68,13 @@ func TestDecode(t *testing.T) {
 		One:   1,
 		Two:   2.2,
 		Three: "three",
+		Five:  big.NewInt(1),
 	})
 	makeDecoderTest(t, fmt.Sprintf("%T", &simpleTestStruct{}), &simpleTestStruct{
 		One:   1,
 		Two:   2.2,
 		Three: "three",
+		Five:  big.NewInt(1),
 	})
 	makeDecoderTest[*simpleTestStruct](t, fmt.Sprintf("%T", &simpleTestStruct{}), nil)
 	makeDecoderTest(t, fmt.Sprintf("%T", testStruct{}), testStruct{
@@ -78,11 +83,13 @@ func TestDecode(t *testing.T) {
 				One:   1,
 				Two:   1.1,
 				Three: "one",
+				Five:  big.NewInt(1),
 			},
 			"two": {
 				One:   2,
 				Two:   2.2,
 				Three: "two",
+				Five:  big.NewInt(2),
 			},
 		},
 		SomeStr: "some root string",
