@@ -27,14 +27,26 @@ func TestDecode(t *testing.T) {
 		One   int8
 		Two   float32
 		Three string
+		Four  *string
 	}
 	type testStruct struct {
 		SomeMap1 map[string]simpleTestStruct
 		SomeStr  string
 		SomeInt  int64
 		SomeMap2 map[string]simpleTestStruct
+		SomeMap3 map[string]*simpleTestStruct
 	}
-	makeDecoderTest(t, "bool", true)
+
+	trueValue := true
+	simpleTestStructValue := simpleTestStruct{
+		One:   1,
+		Two:   1.1,
+		Three: "one",
+	}
+
+	makeDecoderTest(t, "bool=true", trueValue)
+	makeDecoderTest(t, "*bool=true", &trueValue)
+	makeDecoderTest[*bool](t, "*bool=nil", nil)
 	makeDecoderTest(t, "int8", int8(1))
 	makeDecoderTest(t, "int16", int16(1))
 	makeDecoderTest(t, "int32", int32(1))
@@ -54,6 +66,12 @@ func TestDecode(t *testing.T) {
 		Two:   2.2,
 		Three: "three",
 	})
+	makeDecoderTest(t, fmt.Sprintf("%T", &simpleTestStruct{}), &simpleTestStruct{
+		One:   1,
+		Two:   2.2,
+		Three: "three",
+	})
+	makeDecoderTest[*simpleTestStruct](t, fmt.Sprintf("%T", &simpleTestStruct{}), nil)
 	makeDecoderTest(t, fmt.Sprintf("%T", testStruct{}), testStruct{
 		SomeMap1: map[string]simpleTestStruct{
 			"one": {
@@ -69,5 +87,9 @@ func TestDecode(t *testing.T) {
 		},
 		SomeStr: "some root string",
 		SomeInt: 123123123123,
+		SomeMap3: map[string]*simpleTestStruct{
+			"one": &simpleTestStructValue,
+			"two": nil,
+		},
 	})
 }

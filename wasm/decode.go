@@ -76,8 +76,15 @@ func Decode[T any](data []byte) (T, error) {
 					linker = append([][3]reflect.Value{{v, key, value}}, linker...)
 				}
 			}
+		case reflect.Pointer:
+			if decoder.IsNil() {
+				decoder.ReadBytesLength()
+			} else {
+				v.Set(reflect.Indirect(reflect.New(v.Type().Elem())).Addr())
+				queue = append([]reflect.Value{reflect.Indirect(v)}, queue...)
+			}
 		default:
-			return *value, fmt.Errorf("unknown type: %s", v.Type())
+			return *value, fmt.Errorf("unknown type: %s", v)
 		}
 	}
 	for i := range linker {

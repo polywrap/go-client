@@ -68,7 +68,11 @@ func Encode(value any) ([]byte, error) {
 				}
 			}
 		case reflect.Pointer:
-			queue = append([]reflect.Value{reflect.Indirect(v)}, queue...)
+			if v.IsNil() {
+				encoder.WriteNil()
+			} else {
+				queue = append([]reflect.Value{reflect.Indirect(v)}, queue...)
+			}
 		default:
 			return nil, fmt.Errorf("unknown type: %s", v.Type())
 		}
