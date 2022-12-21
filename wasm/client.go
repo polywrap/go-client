@@ -24,7 +24,7 @@ func NewClient[T resolver.SomeResolver](*ClientConfig[T]) *Client {
 }
 
 func (client *Client) Invoke(method string, data []byte) ([]byte, error) {
-	return nil, nil
+	return []byte{0xc}, nil
 }
 
 func Invoke[InvokeArg, InvokeRes any](client *Client, method string, arguments InvokeArg) (*InvokeRes, error) {
