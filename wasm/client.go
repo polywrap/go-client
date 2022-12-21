@@ -1,15 +1,26 @@
 package wasm
 
+import (
+	"github.com/polywrap/go-client/core"
+	"github.com/polywrap/go-client/core/resolver"
+	"github.com/polywrap/go-client/core/resolver/uri"
+)
+
 type (
-	ClientConfig struct {
+	ClientConfig[T resolver.SomeResolver] struct {
+		Resolver   T
+		Env        []byte
+		Interfaces map[string][]uri.URI
 	}
 
 	Client struct {
+		wrapper core.Wrapper
+		invoker core.Invoker
 	}
 )
 
-func NewClient(cfg *ClientConfig) *Client {
-	return nil
+func NewClient[T resolver.SomeResolver](*ClientConfig[T]) *Client {
+	return &Client{}
 }
 
 func (client *Client) Invoke(method string, data []byte) ([]byte, error) {
