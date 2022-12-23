@@ -37,7 +37,7 @@ func TestURIConstructor(t *testing.T) {
 			result, err := New(tt.uri)
 			if tt.err != nil {
 				if !reflect.DeepEqual(err, tt.err) {
-					t.Fatalf("Error expected: %v, got %v", tt.err, err)
+					t.Fatalf("Error expected: '%v', got '%v'", tt.err, err)
 				}
 			} else {
 				if err != nil {
