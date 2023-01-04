@@ -3,16 +3,23 @@ package wasm
 import (
 	"testing"
 
-	"github.com/polywrap/go-client/core/resolver"
+	"github.com/polywrap/go-client/wasm/uri"
 )
 
 func TestClient(t *testing.T) {
+	u := "wrap://fs/cases/simple-calculator"
 	a := int32(5)
 	b := int32(7)
 	expected := a + b
 
-	client := NewClient[resolver.PackageResolver](nil)
-	actual, err := Invoke[map[string]int32, int32](client, "add", map[string]int32{
+	client := NewClient(&ClientConfig{
+		Resolver: &FsResolver{},
+	})
+	wrapUri, err := uri.New(u)
+	if err != nil {
+		t.Fatalf("bad wrapUri: %s (%s)", u, err)
+	}
+	actual, err := Invoke[map[string]int32, int32](client, *wrapUri, "add", map[string]int32{
 		"a": a,
 		"b": b,
 	})
