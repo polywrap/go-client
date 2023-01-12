@@ -1,33 +1,34 @@
-package wasm
+package client
 
 import (
 	"context"
 	"errors"
 
+	"github.com/polywrap/go-client/wasm"
 	"github.com/polywrap/go-client/wasm/uri"
 )
 
 var ErrUnknownResolver = errors.New("resolver return unknown type")
 
 type WrapperLoader struct {
-	resolver Resolver
+	resolver wasm.Resolver
 }
 
-func NewWrapperLoader(resolver Resolver, env []byte, ifaces map[string][]uri.URI) *WrapperLoader {
+func NewWrapperLoader(resolver wasm.Resolver, env []byte, ifaces map[string][]uri.URI) *WrapperLoader {
 	return &WrapperLoader{resolver}
 }
 
-func (wl *WrapperLoader) LoadWrapper(uri uri.URI) (Wrapper, error) {
+func (wl *WrapperLoader) LoadWrapper(uri uri.URI) (wasm.Wrapper, error) {
 	item, err := wl.resolver.TryResolveUri(uri, wl, context.Background())
 	if err != nil {
 		return nil, err
 	}
 
-	if pkg, ok := item.(Package); ok {
+	if pkg, ok := item.(wasm.Package); ok {
 		return pkg.CreateWrapper()
 	}
 
-	if wrp, ok := item.(Wrapper); ok {
+	if wrp, ok := item.(wasm.Wrapper); ok {
 		return wrp, nil
 	}
 

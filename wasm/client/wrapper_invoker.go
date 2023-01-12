@@ -1,6 +1,8 @@
-package wasm
+package client
 
-import "github.com/polywrap/go-client/wasm/uri"
+import (
+	"github.com/polywrap/go-client/wasm/uri"
+)
 
 type WrapperInvoker struct {
 	loader *WrapperLoader

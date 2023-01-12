@@ -3,6 +3,7 @@ package wasm
 import (
 	"fmt"
 
+	"github.com/polywrap/go-client/wasm/instance"
 	"github.com/polywrap/go-client/wasm/uri"
 )
 
@@ -16,7 +17,7 @@ func NewWasmWrapper(manifest, module []byte) *WasmWrapper {
 }
 
 func (wrp *WasmPackage) Invoke(uri uri.URI, method string, args []byte, env []byte) ([]byte, error) {
-	inst, err := NewInstance(wrp.module)
+	inst, err := instance.New(wrp.module)
 	if err != nil {
 		return nil, err
 	}

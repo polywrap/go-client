@@ -1,12 +1,14 @@
-package wasm
+package client
 
 import (
+	"github.com/polywrap/go-client/msgpack"
+	"github.com/polywrap/go-client/wasm"
 	"github.com/polywrap/go-client/wasm/uri"
 )
 
 type (
 	ClientConfig struct {
-		Resolver   Resolver
+		Resolver   wasm.Resolver
 		Env        []byte
 		Interfaces map[string][]uri.URI
 	}
@@ -17,7 +19,7 @@ type (
 	}
 )
 
-func NewClient(cfg *ClientConfig) *Client {
+func New(cfg *ClientConfig) *Client {
 	loader := NewWrapperLoader(cfg.Resolver, cfg.Env, cfg.Interfaces)
 	invoker := NewWrapperInvoker(loader)
 	return &Client{loader, invoker}
@@ -28,7 +30,7 @@ func (client *Client) Invoke(uri uri.URI, method string, args []byte, env []byte
 }
 
 func Invoke[InvokeArg, InvokeRes any](client *Client, uri uri.URI, method string, arguments InvokeArg) (*InvokeRes, error) {
-	args, err := Encode(arguments)
+	args, err := msgpack.Encode(arguments)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +40,7 @@ func Invoke[InvokeArg, InvokeRes any](client *Client, uri uri.URI, method string
 		return nil, err
 	}
 
-	res, err := Decode[InvokeRes](resp)
+	res, err := msgpack.Decode[InvokeRes](resp)
 	if err != nil {
 		return nil, err
 	}
