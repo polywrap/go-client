@@ -1,6 +1,10 @@
 package wasm
 
-import "github.com/polywrap/go-client/wasm/uri"
+import (
+	"context"
+
+	"github.com/polywrap/go-client/wasm/uri"
+)
 
 const (
 	Base64FileEncoding FileEncoding = 1
@@ -17,12 +21,8 @@ type (
 		Interfaces() map[string][]uri.URI
 	}
 
-	WrapperResolver interface {
-		TryResolveUri(uri uri.URI, loader any, context any) (Wrapper, error)
-	}
-
-	PackageResolver interface {
-		TryResolveUri(uri uri.URI, loader any, context any) (Package, error)
+	Resolver interface {
+		TryResolveUri(uri uri.URI, loader Loader, context context.Context) (any, error)
 	}
 
 	Loader interface {

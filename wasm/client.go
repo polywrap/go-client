@@ -6,7 +6,7 @@ import (
 
 type (
 	ClientConfig struct {
-		Resolver   PackageResolver
+		Resolver   Resolver
 		Env        []byte
 		Interfaces map[string][]uri.URI
 	}

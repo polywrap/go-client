@@ -1,6 +1,7 @@
 package wasm
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path"
@@ -15,7 +16,7 @@ func NewFsResolver() *FsResolver {
 	return new(FsResolver)
 }
 
-func (r *FsResolver) TryResolveUri(uri uri.URI, loader any, context any) (Package, error) {
+func (r *FsResolver) TryResolveUri(uri uri.URI, loader Loader, context context.Context) (any, error) {
 	if uri.Authority != "fs" && uri.Authority != "file" {
 		return nil, fmt.Errorf("invalid authority: %s", uri.Authority)
 	}
