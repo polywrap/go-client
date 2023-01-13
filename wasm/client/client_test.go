@@ -10,6 +10,11 @@ import (
 )
 
 func TestClient(t *testing.T) {
+	type EnvType struct {
+		ExternalArray  []uint32
+		ExternalString string
+	}
+
 	cases := []struct {
 		name   string
 		path   string
@@ -20,10 +25,10 @@ func TestClient(t *testing.T) {
 			name: "simple-calculator",
 			path: "wrap://fs/../cases/simple-calculator",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, int32](c, *u, "add", map[string]int32{
+				return Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
-				})
+				}, nil)
 			},
 			expRes: 12,
 		},
@@ -39,7 +44,7 @@ func TestClient(t *testing.T) {
 						Prop2 *big.Int
 					}
 				}
-				return Invoke[ArgType, *big.Int](c, *u, "method", ArgType{
+				return Invoke[ArgType, *big.Int, []byte](c, *u, "method", ArgType{
 					Arg1: big.NewInt(2),
 					Arg2: big.NewInt(3),
 					Obj: struct {
@@ -49,7 +54,7 @@ func TestClient(t *testing.T) {
 						Prop1: big.NewInt(3),
 						Prop2: big.NewInt(4),
 					},
-				})
+				}, nil)
 			},
 			expRes: big.NewInt(72),
 		},
@@ -57,10 +62,10 @@ func TestClient(t *testing.T) {
 			name: "simple-subinvoke/subinvoke",
 			path: "wrap://fs/../cases/simple-subinvoke/subinvoke",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, int32](c, *u, "add", map[string]int32{
+				return Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
-				})
+				}, nil)
 			},
 			expRes: 12,
 		},
@@ -68,12 +73,26 @@ func TestClient(t *testing.T) {
 			name: "simple-subinvoke/invoke",
 			path: "wrap://fs/../cases/simple-subinvoke/invoke",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, string](c, *u, "add", map[string]int32{
+				return Invoke[map[string]int32, string, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
-				})
+				}, nil)
 			},
 			expRes: 12,
+		},
+		{
+			name: "simple-env",
+			path: "wrap://fs/../cases/simple-env",
+			invoke: func(c *Client, u *uri.URI) (any, error) {
+				return Invoke[map[string]string, EnvType](c, *u, "externalEnvMethod", nil, EnvType{
+					ExternalArray:  []uint32{1, 2, 3},
+					ExternalString: "123",
+				})
+			},
+			expRes: EnvType{
+				ExternalArray:  []uint32{1, 2, 3},
+				ExternalString: "123",
+			},
 		},
 	}
 
