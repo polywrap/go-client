@@ -72,6 +72,8 @@ if err != nil {
 log.Printf("Result is: %d\n", *res)
 ```
 
+Detailed example can be found in [example](example) folder.
+
 ## Development
 
 
