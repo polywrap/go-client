@@ -92,7 +92,7 @@ func Decode[T any](data []byte) (T, error) {
 		case reflect.Map:
 			linker[i][0].SetMapIndex(linker[i][1], linker[i][2])
 		case reflect.Struct:
-			linker[i][0].FieldByName(linker[i][1].String()).Set(linker[i][2])
+			linker[i][0].FieldByName(Capitalize(linker[i][1].String())).Set(linker[i][2])
 		}
 	}
 	return *value, nil

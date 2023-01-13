@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/consideritdone/polywrap-go/polywrap/msgpack/big"
 	"github.com/polywrap/go-client/wasm"
 	"github.com/polywrap/go-client/wasm/uri"
 )
@@ -25,6 +26,32 @@ func TestClient(t *testing.T) {
 				})
 			},
 			expRes: 12,
+		},
+		{
+			name: "big-number",
+			path: "wrap://fs/../cases/big-number",
+			invoke: func(c *Client, u *uri.URI) (any, error) {
+				type ArgType struct {
+					Arg1 *big.Int
+					Arg2 *big.Int
+					Obj  struct {
+						Prop1 *big.Int
+						Prop2 *big.Int
+					}
+				}
+				return Invoke[ArgType, *big.Int](c, *u, "method", ArgType{
+					Arg1: big.NewInt(2),
+					Arg2: big.NewInt(3),
+					Obj: struct {
+						Prop1 *big.Int
+						Prop2 *big.Int
+					}{
+						Prop1: big.NewInt(3),
+						Prop2: big.NewInt(4),
+					},
+				})
+			},
+			expRes: big.NewInt(72),
 		},
 		{
 			name: "simple-subinvoke/subinvoke",

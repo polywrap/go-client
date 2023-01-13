@@ -20,7 +20,8 @@ func createMemory(wasm []byte, store *wasmtime.Store) (*wasmtime.Memory, error) 
 
 func createImport(linker *wasmtime.Linker, inst *Instance) {
 	linker.FuncWrap("wrap", "__wrap_load_env", func(ptr int32) {
-		panic("__wrap_load_env not implemented")
+		mem := inst.memory.UnsafeData(inst.store)
+		copy(mem[ptr:], []byte(inst.State.Env))
 	})
 	linker.FuncWrap("wrap", "__wrap_invoke_args", func(methodPtr, argsPtr int32) {
 		mem := inst.memory.UnsafeData(inst.store)
