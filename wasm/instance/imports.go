@@ -71,21 +71,3 @@ func createImport(linker *wasmtime.Linker, inst *Instance) {
 	})
 	linker.Define("env", "memory", inst.memory)
 }
-
-/*
- move |mut caller: Caller<'_, State>, ptr: u32| {
-                let memory = memory.lock().unwrap();
-                let (memory_buffer, state) = memory.data_and_store_mut(caller.as_context_mut());
-
-                match &state.subinvoke.result {
-                    Some(res) => {
-                        write_to_memory(memory_buffer, ptr as usize, res);
-                    }
-                    None => {
-                        (state.abort)(
-                            "__wrap_subinvoke_result: subinvoke.result is not set".to_string(),
-                        );
-                    }
-                }
-            },
-*/

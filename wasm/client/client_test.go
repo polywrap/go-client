@@ -25,12 +25,13 @@ func TestClient(t *testing.T) {
 			name: "simple-calculator",
 			path: "wrap://fs/../cases/simple-calculator",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
+				res, err := Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
 				}, nil)
+				return *res, err
 			},
-			expRes: 12,
+			expRes: int32(12),
 		},
 		{
 			name: "big-number",
@@ -44,7 +45,7 @@ func TestClient(t *testing.T) {
 						Prop2 *big.Int
 					}
 				}
-				return Invoke[ArgType, *big.Int, []byte](c, *u, "method", ArgType{
+				return Invoke[ArgType, big.Int, []byte](c, *u, "method", ArgType{
 					Arg1: big.NewInt(2),
 					Arg2: big.NewInt(3),
 					Obj: struct {
@@ -62,23 +63,25 @@ func TestClient(t *testing.T) {
 			name: "simple-subinvoke/subinvoke",
 			path: "wrap://fs/../cases/simple-subinvoke/subinvoke",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
+				res, err := Invoke[map[string]int32, int32, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
 				}, nil)
+				return *res, err
 			},
-			expRes: 12,
+			expRes: int32(12),
 		},
 		{
 			name: "simple-subinvoke/invoke",
 			path: "wrap://fs/../cases/simple-subinvoke/invoke",
 			invoke: func(c *Client, u *uri.URI) (any, error) {
-				return Invoke[map[string]int32, string, []byte](c, *u, "add", map[string]int32{
+				res, err := Invoke[map[string]int32, string, []byte](c, *u, "add", map[string]int32{
 					"a": 5,
 					"b": 7,
 				}, nil)
+				return *res, err
 			},
-			expRes: 12,
+			expRes: "5 + 7 = 12",
 		},
 		{
 			name: "simple-env",
@@ -89,7 +92,7 @@ func TestClient(t *testing.T) {
 					ExternalString: "123",
 				})
 			},
-			expRes: EnvType{
+			expRes: &EnvType{
 				ExternalArray:  []uint32{1, 2, 3},
 				ExternalString: "123",
 			},
@@ -116,7 +119,7 @@ func TestClient(t *testing.T) {
 			if err != nil {
 				t.Fatalf("invokation error: %s", err)
 			}
-			if reflect.DeepEqual(res, tcase.expRes) {
+			if !reflect.DeepEqual(res, tcase.expRes) {
 				t.Errorf("actual: %d, expected: %d", res, tcase.expRes)
 			}
 		})
