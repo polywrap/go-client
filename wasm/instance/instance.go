@@ -4,8 +4,16 @@ import (
 	"github.com/bytecodealliance/wasmtime-go"
 )
 
-// module *wasmtime.Module, store *wasmtime.Store, state *State
-func New(wasm []byte) (*Instance, error) {
+func NewState(invoker Invoker, method, args, env []byte) *State {
+	return &State{
+		Method:  method,
+		Args:    args,
+		Env:     env,
+		Invoker: invoker,
+	}
+}
+
+func New(wasm []byte, state *State) (*Instance, error) {
 	engine := wasmtime.NewEngine()
 	store := wasmtime.NewStore(engine)
 
@@ -31,24 +39,18 @@ func New(wasm []byte) (*Instance, error) {
 	if err != nil {
 		return nil, err
 	}
-
+	instance.State = state
 	instance.instance = inst
 	return &instance, nil
 }
 
-func (inst *Instance) WrapInvoke(method string, args []byte, env []byte) (State, error) {
-	state := State{
-		Method: []byte(method),
-		Args:   args,
-		Env:    env,
-	}
-	inst.State = &state
+func (inst *Instance) Call() (*State, error) {
 	invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
 	_, err := invoke.Func().Call(
 		inst.store,
-		len(method),
-		len(args),
-		len(env),
+		len(inst.State.Method),
+		len(inst.State.Args),
+		len(inst.State.Env),
 	)
-	return state, err
+	return inst.State, err
 }

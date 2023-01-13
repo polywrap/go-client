@@ -62,7 +62,7 @@ func Encode(value any) ([]byte, error) {
 				encoder.WriteMapLength(uint32(v.NumField()))
 				for i := v.NumField() - 1; i >= 0; i-- {
 					queue = append([]reflect.Value{
-						reflect.ValueOf(t.Field(i).Name),
+						reflect.ValueOf(UnCapitalize(t.Field(i).Name)),
 						v.Field(i),
 					}, queue...)
 				}

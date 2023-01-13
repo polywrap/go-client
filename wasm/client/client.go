@@ -29,13 +29,18 @@ func (client *Client) Invoke(uri uri.URI, method string, args []byte, env []byte
 	return client.invoker.Invoke(uri, method, args, env)
 }
 
-func Invoke[InvokeArg, InvokeRes any](client *Client, uri uri.URI, method string, arguments InvokeArg) (*InvokeRes, error) {
+func Invoke[InvokeArg, InvokeRes, EnvType any](client *Client, uri uri.URI, method string, arguments InvokeArg, envArgs EnvType) (*InvokeRes, error) {
 	args, err := msgpack.Encode(arguments)
 	if err != nil {
 		return nil, err
 	}
 
-	resp, err := client.Invoke(uri, method, args, nil)
+	env, err := msgpack.Encode(envArgs)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := client.Invoke(uri, method, args, env)
 	if err != nil {
 		return nil, err
 	}

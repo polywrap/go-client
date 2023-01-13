@@ -16,21 +16,26 @@ func NewWasmWrapper(manifest, module []byte) *WasmWrapper {
 	return &WasmWrapper{manifest, module}
 }
 
-func (wrp *WasmPackage) Invoke(uri uri.URI, method string, args []byte, env []byte) ([]byte, error) {
-	inst, err := instance.New(wrp.module)
+func (wrp *WasmWrapper) Invoke(invoker Invoker, uri uri.URI, method string, args []byte, env []byte) ([]byte, error) {
+	inst, err := instance.New(wrp.module, instance.NewState(
+		invoker,
+		[]byte(method),
+		args,
+		env,
+	))
 	if err != nil {
 		return nil, err
 	}
-	state, err := inst.WrapInvoke(method, args, env)
+	state, err := inst.Call()
 	if err != nil {
 		return nil, err
 	}
-	if state.Error != nil {
-		return nil, fmt.Errorf("wasm error: %x", state.Error)
+	if state.Invoke.Error != nil {
+		return nil, fmt.Errorf("wasm error: %x", state.Invoke.Error)
 	}
-	return state.Result, nil
+	return state.Invoke.Result, nil
 }
 
-func (wrp *WasmPackage) File(path string, encoding *FileEncoding) ([]byte, error) {
+func (wrp *WasmWrapper) File(path string, encoding *FileEncoding) ([]byte, error) {
 	return nil, nil
 }

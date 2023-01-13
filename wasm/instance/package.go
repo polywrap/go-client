@@ -5,16 +5,24 @@ import (
 	"strings"
 
 	"github.com/bytecodealliance/wasmtime-go"
+	"github.com/polywrap/go-client/wasm/uri"
 )
 
 type (
-	State struct {
-		Method []byte
-		Args   []byte
-		Env    []byte
+	Invoker interface {
+		Invoke(uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
+	}
+	InvokeState struct {
 		Result []byte
 		Error  []byte
-		Nested *State
+	}
+	State struct {
+		Method    []byte
+		Args      []byte
+		Env       []byte
+		Invoke    InvokeState
+		Subinvoke InvokeState
+		Invoker   Invoker
 	}
 	Instance struct {
 		memory   *wasmtime.Memory
