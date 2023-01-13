@@ -8,7 +8,7 @@ import (
 	"github.com/consideritdone/polywrap-go/polywrap/msgpack/big"
 )
 
-func testSimpleCalculator(inst *Instance) func(t *testing.T) {
+func testSimpleCalculator(module []byte) func(t *testing.T) {
 	return func(t *testing.T) {
 		a := int32(5)
 		b := int32(7)
@@ -22,15 +22,21 @@ func testSimpleCalculator(inst *Instance) func(t *testing.T) {
 		encoder.WriteString("b")
 		encoder.WriteI32(b)
 
-		s, err := inst.WrapInvoke("add", encoder.Buffer(), nil)
+		state := NewState(nil, []byte("add"), encoder.Buffer(), nil)
+		inst, err := New(module, state)
+		if err != nil {
+			t.Fatalf("Can't create instance: %s", err)
+		}
+
+		s, err := inst.Call()
 		if err != nil {
 			t.Errorf("can't call 'add', error: %s", err)
 		}
-		if len(s.Error) > 0 {
-			t.Errorf("can't call 'add', error: %s", s.Error)
+		if len(s.Invoke.Error) > 0 {
+			t.Errorf("can't call 'add', error: %s", s.Invoke.Error)
 		}
 
-		decoder := msgpack.NewReadDecoder(context, s.Result)
+		decoder := msgpack.NewReadDecoder(context, s.Invoke.Result)
 		actual := decoder.ReadI32()
 		if actual != expected {
 			t.Errorf("expected: %d, actual: %d", expected, actual)
@@ -38,7 +44,7 @@ func testSimpleCalculator(inst *Instance) func(t *testing.T) {
 	}
 }
 
-func testBigNumber(inst *Instance) func(t *testing.T) {
+func testBigNumber(module []byte) func(t *testing.T) {
 	return func(t *testing.T) {
 		context := msgpack.NewContext("Call method BigNumber")
 		encoder := msgpack.NewWriteEncoder(context)
@@ -68,11 +74,17 @@ func testBigNumber(inst *Instance) func(t *testing.T) {
 			}
 		})
 
-		s, err := inst.WrapInvoke("method", encoder.Buffer(), nil)
+		state := NewState(nil, []byte("method"), encoder.Buffer(), nil)
+		inst, err := New(module, state)
+		if err != nil {
+			t.Fatalf("Can't create instance: %s", err)
+		}
+
+		s, err := inst.Call()
 		if err != nil {
 			t.Errorf("can't call 'method', error: %s", err)
 		}
-		decoder := msgpack.NewReadDecoder(context, s.Result)
+		decoder := msgpack.NewReadDecoder(context, s.Invoke.Result)
 		actual := decoder.ReadBigInt()
 
 		if actual.Cmp(expected) != 0 {
@@ -86,7 +98,7 @@ func TestInstance(t *testing.T) {
 		name     string
 		wasmType string
 		wasmData string
-		fn       func(inst *Instance) func(t *testing.T)
+		fn       func([]byte) func(t *testing.T)
 	}{
 		{
 			name:     "simple-calculator",
@@ -117,10 +129,6 @@ func TestInstance(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Can't read wasm file: %s", err)
 		}
-		inst, err := New(module)
-		if err != nil {
-			t.Fatalf("Can't create instance: %s", err)
-		}
-		t.Run(tcase.name, tcase.fn(inst))
+		t.Run(tcase.name, tcase.fn(module))
 	}
 }

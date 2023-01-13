@@ -14,5 +14,5 @@ func (pkg *WasmPackage) Manifest(validation bool) (any, error) {
 }
 
 func (pkg *WasmPackage) CreateWrapper() (Wrapper, error) {
-	return NewWasmPackage(pkg.manifest, pkg.module), nil
+	return NewWasmWrapper(pkg.manifest, pkg.module), nil
 }

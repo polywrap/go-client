@@ -37,13 +37,30 @@ func TestClient(t *testing.T) {
 			},
 			expRes: 12,
 		},
+		{
+			name: "simple-subinvoke/invoke",
+			path: "wrap://fs/../cases/simple-subinvoke/invoke",
+			invoke: func(c *Client, u *uri.URI) (any, error) {
+				return Invoke[map[string]int32, string](c, *u, "add", map[string]int32{
+					"a": 5,
+					"b": 7,
+				})
+			},
+			expRes: 12,
+		},
 	}
 
 	for i := range cases {
 		tcase := cases[i]
+		u, _ := uri.New("wrap://fs/../cases/simple-subinvoke/subinvoke")
 		t.Run(tcase.name, func(t *testing.T) {
 			client := New(&ClientConfig{
-				Resolver: &wasm.FsResolver{},
+				Resolver: wasm.NewBaseResolver(
+					wasm.NewRedirectResolver(map[string]*uri.URI{
+						"wrap://ens/add.eth": u,
+					}),
+					wasm.NewFsResolver(),
+				),
 			})
 			wrapUri, err := uri.New(tcase.path)
 			if err != nil {

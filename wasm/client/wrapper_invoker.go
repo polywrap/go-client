@@ -1,6 +1,7 @@
 package client
 
 import (
+	"github.com/polywrap/go-client/wasm"
 	"github.com/polywrap/go-client/wasm/uri"
 )
 
@@ -17,5 +18,17 @@ func (wi *WrapperInvoker) Invoke(uri uri.URI, method string, args []byte, env []
 	if err != nil {
 		return nil, err
 	}
-	return wrapper.Invoke(uri, method, args, env)
+	return wi.InvokeWrapper(wrapper, uri, method, args, env)
+}
+
+func (wi *WrapperInvoker) InvokeWrapper(wrapper wasm.Wrapper, uri uri.URI, method string, args []byte, env []byte) ([]byte, error) {
+	return wrapper.Invoke(wi, uri, method, args, env)
+}
+
+func (wi *WrapperInvoker) Implementations(uri uri.URI) ([]uri.URI, error) {
+	return nil, nil
+}
+
+func (wi *WrapperInvoker) Interfaces() map[string][]uri.URI {
+	return nil
 }

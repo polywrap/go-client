@@ -16,7 +16,7 @@ type (
 
 	Invoker interface {
 		Invoke(uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
-		InvokeWrapper(wrapper any, uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
+		InvokeWrapper(wrapper Wrapper, uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
 		Implementations(uri uri.URI) ([]uri.URI, error)
 		Interfaces() map[string][]uri.URI
 	}
@@ -35,7 +35,7 @@ type (
 	}
 
 	Wrapper interface {
-		Invoke(uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
+		Invoke(invoker Invoker, uri uri.URI, method string, args []byte, env []byte) ([]byte, error)
 		File(path string, encoding *FileEncoding) ([]byte, error)
 	}
 )
