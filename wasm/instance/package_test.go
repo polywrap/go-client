@@ -1,15 +1,14 @@
-package wasm
+package instance
 
 import (
 	"os"
 	"testing"
 
-	"github.com/bytecodealliance/wasmtime-go"
 	"github.com/consideritdone/polywrap-go/polywrap/msgpack"
 	"github.com/consideritdone/polywrap-go/polywrap/msgpack/big"
 )
 
-func testSimpleCalculator(inst *WasmInstance) func(t *testing.T) {
+func testSimpleCalculator(inst *Instance) func(t *testing.T) {
 	return func(t *testing.T) {
 		a := int32(5)
 		b := int32(7)
@@ -39,7 +38,7 @@ func testSimpleCalculator(inst *WasmInstance) func(t *testing.T) {
 	}
 }
 
-func testBigNumber(inst *WasmInstance) func(t *testing.T) {
+func testBigNumber(inst *Instance) func(t *testing.T) {
 	return func(t *testing.T) {
 		context := msgpack.NewContext("Call method BigNumber")
 		encoder := msgpack.NewWriteEncoder(context)
@@ -82,76 +81,24 @@ func testBigNumber(inst *WasmInstance) func(t *testing.T) {
 	}
 }
 
-func testSimpleEnv(inst *WasmInstance) func(t *testing.T) {
-	return func(t *testing.T) {
-		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-		t.Logf("complete %#v", invoke)
-	}
-}
-
-func testSimpleInvoke(inst *WasmInstance) func(t *testing.T) {
-	return func(t *testing.T) {
-		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-		t.Logf("complete %#v", invoke)
-	}
-}
-
-func testSimpleSubinvokeInvoke(inst *WasmInstance) func(t *testing.T) {
-	return func(t *testing.T) {
-		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-		t.Logf("complete %#v", invoke)
-	}
-}
-
-func testSimpleSubinvokeSubinvoke(inst *WasmInstance) func(t *testing.T) {
-	return func(t *testing.T) {
-		invoke := inst.instance.GetExport(inst.store, "_wrap_invoke")
-		t.Logf("complete %#v", invoke)
-	}
-}
-
-func TestImports(t *testing.T) {
+func TestInstance(t *testing.T) {
 	cases := []struct {
 		name     string
 		wasmType string
 		wasmData string
-		fn       func(inst *WasmInstance) func(t *testing.T)
+		fn       func(inst *Instance) func(t *testing.T)
 	}{
 		{
 			name:     "simple-calculator",
 			wasmType: "file",
-			wasmData: "cases/simple-calculator/wrap.wasm",
+			wasmData: "../cases/simple-calculator/wrap.wasm",
 			fn:       testSimpleCalculator,
 		},
 		{
 			name:     "big-number",
 			wasmType: "file",
-			wasmData: "cases/big-number/wrap.wasm",
+			wasmData: "../cases/big-number/wrap.wasm",
 			fn:       testBigNumber,
-		},
-		{
-			name:     "simple-env",
-			wasmType: "file",
-			wasmData: "cases/simple-env/wrap.wasm",
-			fn:       testSimpleEnv,
-		},
-		{
-			name:     "simple-invoke",
-			wasmType: "file",
-			wasmData: "cases/simple-invoke/wrap.wasm",
-			fn:       testSimpleInvoke,
-		},
-		{
-			name:     "subinvoke/invoke",
-			wasmType: "file",
-			wasmData: "cases/simple-subinvoke/invoke/wrap.wasm",
-			fn:       testSimpleSubinvokeInvoke,
-		},
-		{
-			name:     "subinvoke/subinvoke",
-			wasmType: "file",
-			wasmData: "cases/simple-subinvoke/subinvoke/wrap.wasm",
-			fn:       testSimpleSubinvokeSubinvoke,
 		},
 	}
 
@@ -164,13 +111,13 @@ func TestImports(t *testing.T) {
 		switch tcase.wasmType {
 		case "file":
 			module, err = os.ReadFile(tcase.wasmData)
-		case "wat":
-			module, err = wasmtime.Wat2Wasm(tcase.wasmData)
+		default:
+			t.Fatalf("unknown wasmType: [%s](%s)", tcase.wasmType, tcase.wasmData)
 		}
 		if err != nil {
 			t.Fatalf("Can't read wasm file: %s", err)
 		}
-		inst, err := NewInstance(module)
+		inst, err := New(module)
 		if err != nil {
 			t.Fatalf("Can't create instance: %s", err)
 		}
