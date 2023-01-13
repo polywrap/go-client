@@ -48,7 +48,29 @@ go version
 your output in this case should be something like `go version go1.18.1 linux/amd64`.
 
 
-## Demo Application
+## Using Polywrap Go client
+
+Example of Golang app that uses [SimpleCalculator](https://github.com/polywrap/toolchain/tree/origin-dev/packages/test-cases/cases/wrappers/wasm-as/simple-calculator) wrapper
+
+```go
+wrapPath := "wrap://fs/../wasm/cases/simple-calculator"
+polywrapClient := client.New(&client.ClientConfig{
+    Resolver: wasm.NewFsResolver(),
+})
+wrapUri, err := uri.New(wrapPath)
+if err != nil {
+    log.Fatalf("bad wrapUri: %s (%s)", wrapPath, err)
+}
+res, err := client.Invoke[map[string]int32, int32, []byte](polywrapClient, *wrapUri, "add", map[string]int32{
+    "a": 5,
+    "b": 7,
+}, nil)
+if err != nil {
+    log.Fatalf("invokation error: %s", err)
+}
+
+log.Printf("Result is: %d\n", *res)
+```
 
 ## Development
 
