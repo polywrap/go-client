@@ -14,7 +14,7 @@ type AddType struct {
 }
 
 func main() {
-	wrapPath := "wrap://fs//srv/polywrap/go-client/wasm/cases/simple-calculator"
+	wrapPath := "wrap://fs/../wasm/cases/simple-calculator"
 	polywrapClient := client.New(&client.ClientConfig{
 		Resolver: wasm.NewFsResolver(),
 	})
