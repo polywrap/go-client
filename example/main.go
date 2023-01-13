@@ -8,8 +8,13 @@ import (
 	"github.com/polywrap/go-client/wasm/uri"
 )
 
+type AddType struct {
+	a int32
+	b int32
+}
+
 func main() {
-	wrapPath := "wrap://fs/../wasm/cases/simple-calculator"
+	wrapPath := "wrap://fs//srv/polywrap/go-client/wasm/cases/simple-calculator"
 	polywrapClient := client.New(&client.ClientConfig{
 		Resolver: wasm.NewFsResolver(),
 	})
@@ -17,12 +22,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("bad wrapUri: %s (%s)", wrapPath, err)
 	}
-	res, err := client.Invoke[map[string]int32, int32, []byte](polywrapClient, *wrapUri, "add", map[string]int32{
-		"a": 5,
-		"b": 7,
-	}, nil)
+	args := AddType{
+		a: 5,
+		b: 7,
+	}
+	res, err := client.Invoke[AddType, int32, []byte](polywrapClient, *wrapUri, "add", args, nil)
 	if err != nil {
-		log.Fatalf("invokation error: %s", err)
+		log.Fatalf("invokation error: %+v", err)
 	}
 
 	log.Printf("Result is: %d\n", *res)
