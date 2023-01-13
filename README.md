@@ -16,8 +16,8 @@ Here you can see which features have been implemented on each language, and make
 | Feature | [Python](https://github.com/polywrap/python-client) | [Javascript](https://github.com/polywrap/toolchain) |  [Go](https://github.com/polywrap/go-client) | [Rust](https://github.com/polywrap/rust-client) |
 | -- | -- | -- | -- | -- |
 | **Invoke**  | ✅ | ✅ | ✅ | ⚙️|
-| Subinvoke | ⚙️ | ✅ | | ✅ | |
-| Interfaces | ❌ | ✅ | | ✅ | |
+| Subinvoke | ⚙️ | ✅ | ✅ |  |
+| Interfaces | ❌ | ✅ | ✅ | |
 | Env Configuration | ⚙️ | ✅ | ✅ | |
 | Client Config | ⚙️ | ✅ | ✅ | ⚙️|
 | Plugin Wrapper | ❌ | ✅ | | |
