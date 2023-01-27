@@ -13,7 +13,7 @@ func execDecoderTest[T any](t *testing.T, name string, expected T) {
 	t.Run(name, func(t *testing.T) {
 		data, err := Encode(expected)
 		if err != nil {
-			t.Fatalf("can't make test %s", name)
+			t.Fatalf("can't make test %s: %+v", name, err)
 		}
 		actual, err := Decode[T](data)
 		if err != nil {

@@ -72,6 +72,14 @@ func TestEncode(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "map[string]interface{}",
+			value: map[string]interface{}{
+				"one":   "some string",
+				"two":   int8(2),
+				"three": int32(100500),
+			},
+		},
 	}
 	for i := range cases {
 		tcase := cases[i]

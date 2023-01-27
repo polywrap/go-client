@@ -47,8 +47,9 @@ func Encode(value any) ([]byte, error) {
 			}
 		case reflect.Map:
 			encoder.WriteMapLength(uint32(v.Len()))
-			for i, keys := v.Len()-1, v.MapKeys(); i >= 0; i-- {
-				queue = append([]reflect.Value{keys[i], v.MapIndex(keys[i])}, queue...)
+			for _, key := range v.MapKeys() {
+				item := v.MapIndex(key)
+				queue = append([]reflect.Value{key, item}, queue...)
 			}
 		case reflect.Struct:
 			t := v.Type()
@@ -72,6 +73,12 @@ func Encode(value any) ([]byte, error) {
 				encoder.WriteNil()
 			} else {
 				queue = append([]reflect.Value{reflect.Indirect(v)}, queue...)
+			}
+		case reflect.Interface:
+			if v.IsNil() {
+				encoder.WriteNil()
+			} else {
+				queue = append([]reflect.Value{reflect.ValueOf(v.Interface())}, queue...)
 			}
 		default:
 			return nil, fmt.Errorf("unknown type: %s", v.Type())
