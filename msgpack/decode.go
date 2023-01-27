@@ -84,7 +84,7 @@ func Decode[T any](data []byte) (T, error) {
 				queue = append([]reflect.Value{reflect.Indirect(v)}, queue...)
 			}
 		default:
-			return *value, fmt.Errorf("unknown type: %s", v)
+			return *value, fmt.Errorf("unknown type: %s", v.Type())
 		}
 	}
 	for i := range linker {
