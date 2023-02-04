@@ -1,14 +1,12 @@
 package plugin
 
 import (
-	"errors"
 	"fmt"
 	"github.com/polywrap/go-client/msgpack"
 	"github.com/polywrap/go-client/wasm"
 	"github.com/polywrap/go-client/wasm/client"
 	"github.com/polywrap/go-client/wasm/uri"
 	"log"
-	"reflect"
 	"testing"
 )
 
@@ -19,54 +17,6 @@ type ArgType struct {
 type DemoPlugin struct {
 }
 
-func (d *DemoPlugin) WrapInvoke(method string, args []byte, invoker wasm.Invoker) ([]byte, error) {
-	res, err := d.callMethod(method, args)
-	if err != nil {
-		return nil, err
-	}
-	resEncoded, err := msgpack.Encode(res)
-	if err != nil {
-		return nil, err
-	}
-
-	return resEncoded, nil
-}
-
-func (d *DemoPlugin) callMethod(method string, args []byte) (any, error) {
-	_, ok := reflect.TypeOf(d).MethodByName(method)
-	if !ok {
-		return nil, fmt.Errorf("method %s not found in plugin", method)
-	}
-	argsDecoded, err := msgpack.Decode[ArgType](args)
-	if err != nil {
-		return nil, err
-	}
-
-	inputs := []reflect.Value{reflect.ValueOf(argsDecoded)}
-	resValue := reflect.ValueOf(d).MethodByName(method).Call(inputs)
-
-	if len(resValue) == 0 {
-		return nil, errors.New("plugin didn't return value")
-	}
-
-	v := resValue[0]
-
-	switch v.Kind() {
-	case reflect.Bool:
-		return v.Bool(), nil
-	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return v.Int(), nil
-	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		return v.Uint(), nil
-	case reflect.Float32, reflect.Float64:
-		return v.Float(), nil
-	case reflect.String:
-		return v.String(), nil
-	default:
-		return nil, fmt.Errorf("unknown type: %s", v.Kind())
-	}
-}
-
 func (d *DemoPlugin) CheckArgIsBar(arg ArgType) bool {
 	if arg.Key == "bar" {
 		return true
@@ -74,20 +24,17 @@ func (d *DemoPlugin) CheckArgIsBar(arg ArgType) bool {
 	return false
 }
 
-func (d *DemoPlugin) CreateWrapper() (wasm.Wrapper, error) {
-	return NewPluginWrapper(d), nil
-}
-
-func (d *DemoPlugin) Manifest(_ bool) (any, error) {
-	return nil, nil
+func (d *DemoPlugin) EncodeArgs(method string, args []byte) (any, error) {
+	switch method {
+	case "CheckArgIsBar":
+		return msgpack.Decode[ArgType](args)
+	default:
+		return nil, fmt.Errorf("unknown method: %s", method)
+	}
 }
 
 func TestPlugin(t *testing.T) {
-	//u, _ := uri.New("ens/demo-plugin.eth")
-	//uriPackage := UriPackage{
-	//	uri: u,
-	//	pkg: &DemoPlugin{},
-	//}
+	pluginPackage := NewPluginPackage(nil, NewPluginModule(&DemoPlugin{}))
 
 	wrapUri, err := uri.New("wrap://ens/demo-plugin.eth")
 	if err != nil {
@@ -95,7 +42,7 @@ func TestPlugin(t *testing.T) {
 	}
 
 	resolver := wasm.NewStaticResolver(map[string]wasm.Package{
-		"wrap://ens/demo-plugin.eth": &DemoPlugin{},
+		"wrap://ens/demo-plugin.eth": pluginPackage,
 	})
 
 	polywrapClient := client.New(&client.ClientConfig{
@@ -109,5 +56,7 @@ func TestPlugin(t *testing.T) {
 		log.Fatalf("invokation error: %+v", err)
 	}
 
-	log.Printf("Result is: %t\n", *res)
+	if *res != true {
+		t.Errorf("Actual: %#v, Expected: %#v", *res, true)
+	}
 }
