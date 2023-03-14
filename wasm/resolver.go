@@ -82,6 +82,9 @@ func (r *BaseResolver) TryResolveUri(uri pkguri.URI, loader Loader, context cont
 		if u, ok := data.(*pkguri.URI); ok {
 			return r.FsResolver.TryResolveUri(*u, loader, context)
 		}
+		if u, ok := data.(Package); ok {
+			return u, nil
+		}
 	}
 	return r.FsResolver.TryResolveUri(uri, loader, context)
 }

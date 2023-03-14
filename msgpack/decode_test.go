@@ -66,6 +66,7 @@ func TestDecode(t *testing.T) {
 	execDecoderTest(t, "string", "hello world")
 	execDecoderTest(t, "[4]int8", [4]int8{1, 2, 3, 4})
 	execDecoderTest(t, "[]int8", []int8{1, 2, 3, 4})
+	execDecoderTest(t, "[]byte", []byte{0x01, 0x02, 0x03, 0x04})
 	execDecoderTest(t, "map[string]int8", map[string]int8{"one": 1, "two": 2, "three": 3})
 	execDecoderTest(t, fmt.Sprintf("%T", simpleStruct{}), simpleStruct{
 		One:   1,
