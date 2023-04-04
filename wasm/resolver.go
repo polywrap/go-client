@@ -20,7 +20,22 @@ type (
 		RdResolver Resolver
 		FsResolver Resolver
 	}
+
+	StaticResolver struct {
+		UriMap map[string]Package
+	}
 )
+
+func NewStaticResolver(sm map[string]Package) *StaticResolver {
+	return &StaticResolver{sm}
+}
+
+func (r *StaticResolver) TryResolveUri(uri pkguri.URI, _ Loader, _ context.Context) (any, error) {
+	if u, ok := r.UriMap[uri.Uri]; ok {
+		return u, nil
+	}
+	return nil, errors.New("not found")
+}
 
 func NewFsResolver() *FsResolver {
 	return new(FsResolver)
@@ -48,7 +63,7 @@ func NewRedirectResolver(rd map[string]*pkguri.URI) *RedirectResolver {
 	return &RedirectResolver{rd}
 }
 
-func (r *RedirectResolver) TryResolveUri(uri pkguri.URI, loader Loader, context context.Context) (any, error) {
+func (r *RedirectResolver) TryResolveUri(uri pkguri.URI, _ Loader, _ context.Context) (any, error) {
 	if u, ok := r.UriMap[uri.Uri]; ok {
 		return u, nil
 	}
@@ -66,6 +81,9 @@ func (r *BaseResolver) TryResolveUri(uri pkguri.URI, loader Loader, context cont
 	if data, err := r.RdResolver.TryResolveUri(uri, loader, context); err == nil {
 		if u, ok := data.(*pkguri.URI); ok {
 			return r.FsResolver.TryResolveUri(*u, loader, context)
+		}
+		if u, ok := data.(Package); ok {
+			return u, nil
 		}
 	}
 	return r.FsResolver.TryResolveUri(uri, loader, context)

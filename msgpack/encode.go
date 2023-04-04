@@ -41,9 +41,14 @@ func Encode(value any) ([]byte, error) {
 		case reflect.String:
 			encoder.WriteString(v.String())
 		case reflect.Slice, reflect.Array:
-			encoder.WriteArrayLength(uint32(v.Len()))
-			for i := 0; i < v.Len(); i++ {
-				queue = append([]reflect.Value{v.Index(i)}, queue...)
+			// handle []byte
+			if v.Type().String() == "[]uint8" {
+				encoder.WriteBytes(v.Bytes())
+			} else {
+				encoder.WriteArrayLength(uint32(v.Len()))
+				for i := 0; i < v.Len(); i++ {
+					queue = append([]reflect.Value{v.Index(i)}, queue...)
+				}
 			}
 		case reflect.Map:
 			encoder.WriteMapLength(uint32(v.Len()))
